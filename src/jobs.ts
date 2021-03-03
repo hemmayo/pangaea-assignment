@@ -11,7 +11,7 @@ class Jobs {
 
   private publishMessages() {
     // Job runs for 10 seconds
-    cron.schedule('5 * * * * *', async () => {
+    cron.schedule('*/10 * * * * *', async () => {
       logger.info('publishing messages');
       await this.appService.publishMessages();
     });
