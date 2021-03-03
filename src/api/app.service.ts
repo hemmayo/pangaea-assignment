@@ -9,21 +9,21 @@ class AppService {
   public queue = queueModel;
 
   public async publishMessage(topic: string, data: string) {
-    const subscribers = await this.subscriber.find({ topic });
+    const subscribers: ISubscriber[] = await this.subscriber.find({ topic });
     const unpublishedMessages = await this.queue.find({
       topic,
       data,
       isPublished: false,
-      createdAt: { $gte: addMinutesToDate(new Date(), -2) },
+      createdAt: { $gte: addMinutesToDate(new Date(), -1) },
     });
 
     if (!subscribers) {
       throw new HttpException(404, `No subscribers found for this topic`);
     }
 
-    if (unpublishedMessages) {
-      // The same message was sent to the queue and hasn't been published in the past 2 minutes (idempotent)
-      throw new HttpException(204, `Your message is being published`);
+    if (unpublishedMessages.length) {
+      // The same message was sent to the queue and hasn't been published in the past one minute (idempotent)
+      throw new HttpException(200, `Your message is being published`);
     }
 
     await this.queue.create({ topic, data });
