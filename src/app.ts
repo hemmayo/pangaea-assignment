@@ -10,7 +10,6 @@ import { dbConnection } from './database';
 import Routes from './interfaces/routes.interface';
 import errorMiddleware from './middlewares/error.middleware';
 import { logger, stream } from './utils/logger';
-import cron from 'node-cron';
 import Jobs from './jobs';
 
 class App {
