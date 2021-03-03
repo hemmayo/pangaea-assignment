@@ -37,13 +37,6 @@ class AppService {
     return { message: 'Message published!' };
   }
 
-  public async getMessagesFromQueue() {
-    const messageLimit = 50;
-    const messages: IMessage[] = await this.messageQueue.find({ isPublished: false }).limit(messageLimit).lean();
-
-    return messages;
-  }
-
   public async addMessageToSubscribersQueue(message) {
     const { _id: messageId, topic }: IMessage = message;
     const subscribers: ISubscriber[] = await this.subscriber.find({ topic });
