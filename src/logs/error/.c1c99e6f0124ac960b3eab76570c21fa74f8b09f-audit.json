@@ -1,0 +1,14 @@
+{
+    "keep": {
+        "days": false,
+        "amount": 30
+    },
+    "auditLog": "/Users/hemmayo/Projects/test/pangaea-publisher/src/logs/error/.c1c99e6f0124ac960b3eab76570c21fa74f8b09f-audit.json",
+    "files": [
+        {
+            "date": 1614808228406,
+            "name": "/Users/hemmayo/Projects/test/pangaea-publisher/src/logs/error/2021-03-03.error.log",
+            "hash": "278aa698494fb3129c18d606fd91bee1"
+        }
+    ]
+}
