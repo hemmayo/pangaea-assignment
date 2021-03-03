@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { CreateSubscriberDto } from './app.dto';
-import { IPublishMessage, ISubscriber } from '../interfaces';
+import { IMessage, ISubscriber } from '../interfaces';
 import appService from './app.service';
 
 class AppController {

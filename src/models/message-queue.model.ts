@@ -1,6 +1,7 @@
 import { model, Schema, Document } from 'mongoose';
+import { IMessage } from '../interfaces';
 
-const queueSchema: Schema = new Schema(
+const messageQueueSchema: Schema = new Schema(
   {
     topic: {
       type: String,
@@ -18,6 +19,6 @@ const queueSchema: Schema = new Schema(
   { timestamps: true },
 );
 
-const queueModel = model<Document>('Queue', queueSchema);
+const messageQueueModel = model<IMessage & Document>('MessageQueue', messageQueueSchema);
 
-export default queueModel;
+export default messageQueueModel;

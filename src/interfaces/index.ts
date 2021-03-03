@@ -4,8 +4,16 @@ export interface ISubscriber {
   topic: string;
 }
 
-export interface IPublishMessage {
+export interface IMessage {
   _id?: string;
   topic: string;
   data: Record<string, any>;
+  createdAt?: Date;
+  isPublished?: boolean;
+}
+
+export interface ISubscriberMessage {
+  _id?: string;
+  messageId: string;
+  url: string;
 }

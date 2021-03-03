@@ -1,18 +1,20 @@
 import HttpException from '../exceptions/HttpException';
-import { IPublishMessage, ISubscriber } from '../interfaces';
+import { IMessage, ISubscriber, ISubscriberMessage } from '../interfaces';
 import subscriberModel from '../models/subscriber.model';
-import queueModel from '../models/queue.model';
+import messageQueueModel from '../models/message-queue.model';
 import { addMinutesToDate } from '../utils/util';
 import axios from 'axios';
 import { logger } from '../utils/logger';
+import publishQueueModel from '../models/publish-queue.model';
 
 class AppService {
   public subscriber = subscriberModel;
-  public queue = queueModel;
+  public messageQueue = messageQueueModel;
+  public publishQueue = publishQueueModel;
 
-  public async addMessageToQueue(topic: string, data: string) {
+  public async addMessageToQueue(topic: string, data: Record<string, any>) {
     const subscribers: ISubscriber[] = await this.subscriber.find({ topic });
-    const unpublishedMessages = await this.queue.find({
+    const unpublishedMessages = await this.messageQueue.countDocuments({
       topic,
       data,
       isPublished: false,
@@ -23,44 +25,55 @@ class AppService {
       throw new HttpException(404, `No subscribers found for this topic`);
     }
 
-    if (unpublishedMessages.length) {
-      // The same message was sent to the queue and hasn't been published in the past one minute (idempotent)
+    if (unpublishedMessages) {
+      // The same message was sent to the messageQueue and hasn't been published in the past one minute (idempotent)
       throw new HttpException(200, `Your message is being published`);
     }
 
-    await this.queue.create({ topic, data });
+    const message = new this.messageQueue({ topic, data });
+    await this.addMessageToSubscribersQueue(message);
 
+    await message.save();
     return { message: 'Message published!' };
   }
 
+  public async getMessagesFromQueue() {
+    const messageLimit = 50;
+    const messages: IMessage[] = await this.messageQueue.find({ isPublished: false }).limit(messageLimit).lean();
+
+    return messages;
+  }
+
+  public async addMessageToSubscribersQueue(message) {
+    const { _id: messageId, topic }: IMessage = message;
+    const subscribers: ISubscriber[] = await this.subscriber.find({ topic });
+    const messages: ISubscriberMessage[] = subscribers.map(subscriber => ({ messageId, url: subscriber.url }));
+
+    return this.publishQueue.insertMany(messages);
+  }
+
   public async publishMessages() {
-    const limit = 50;
-    let messagesReceived;
+    const publishedMessagesIds = [];
+    const limit = 100;
 
-    const messages: IPublishMessage[] = await this.queue.find({ isPublished: false }).limit(limit).lean();
+    const queueMessages: ISubscriberMessage[] = await this.publishQueue.find().limit(limit);
 
-    for (const message of messages) {
-      const { topic, data, _id } = message;
-      const subscribers: ISubscriber[] = await this.findAll({ topic });
-      messagesReceived = 0;
+    for (const queueMessage of queueMessages) {
+      const { url, messageId, _id } = queueMessage;
+      const message: IMessage = await this.messageQueue.findById(messageId);
 
-      if (subscribers.length) {
-        for (const subscriber of subscribers) {
-          const { url } = subscriber;
-
-          try {
-            await axios.post(url, data);
-            messagesReceived++;
-          } catch (e) {
-            logger.error(`Failed to publish message to ${url}`);
-          }
-        }
+      try {
+        await axios.post(url, message.data);
+        publishedMessagesIds.push(_id);
+      } catch (e) {
+        logger.error(`Failed to publish message to ${url}`);
       }
 
-      if (messagesReceived > 0) {
-        // Set message status to published
-        await this.queue.updateOne({ _id }, { isPublished: true });
-      }
+      // Set message status to published
+      await this.messageQueue.updateOne({ _id: messageId }, { isPublished: true });
+
+      // Delete published messages from queue
+      await this.publishQueue.deleteMany({ _id: publishedMessagesIds });
     }
   }
 
