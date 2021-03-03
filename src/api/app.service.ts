@@ -1,14 +1,16 @@
 import HttpException from '../exceptions/HttpException';
-import { ISubscriber } from '../interfaces';
+import { IPublishMessage, ISubscriber } from '../interfaces';
 import subscriberModel from '../models/subscriber.model';
 import queueModel from '../models/queue.model';
 import { addMinutesToDate } from '../utils/util';
+import axios from 'axios';
+import { logger } from '../utils/logger';
 
 class AppService {
   public subscriber = subscriberModel;
   public queue = queueModel;
 
-  public async publishMessage(topic: string, data: string) {
+  public async addMessageToQueue(topic: string, data: string) {
     const subscribers: ISubscriber[] = await this.subscriber.find({ topic });
     const unpublishedMessages = await this.queue.find({
       topic,
@@ -31,8 +33,39 @@ class AppService {
     return { message: 'Message published!' };
   }
 
-  public async findAll(): Promise<ISubscriber[]> {
-    const subscribers: ISubscriber[] = await this.subscriber.find().select('topic url _id');
+  public async publishMessages() {
+    const limit = 50;
+    let messagesReceived;
+
+    const messages: IPublishMessage[] = await this.queue.find({ isPublished: false }).limit(limit).lean();
+
+    for (const message of messages) {
+      const { topic, data, _id } = message;
+      const subscribers: ISubscriber[] = await this.findAll({ topic });
+      messagesReceived = 0;
+
+      if (subscribers.length) {
+        for (const subscriber of subscribers) {
+          const { url } = subscriber;
+
+          try {
+            await axios.post(url, data);
+            messagesReceived++;
+          } catch (e) {
+            logger.error(`Failed to publish message to ${url}`);
+          }
+        }
+      }
+
+      if (messagesReceived > 0) {
+        // Set message status to published
+        await this.queue.updateOne({ _id }, { isPublished: true });
+      }
+    }
+  }
+
+  public async findAll(criteria = {}): Promise<ISubscriber[]> {
+    const subscribers: ISubscriber[] = await this.subscriber.find(criteria).select('topic url _id');
     return subscribers;
   }
 

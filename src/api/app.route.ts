@@ -17,7 +17,7 @@ class AppRoute implements Route {
     this.router.get(`${this.path}/subscribers`, this.appController.getSubscribers);
     this.router.post(`${this.path}/subscribe/:topic`, validationMiddleware(CreateSubscriberDto, 'body'), this.appController.createSubscriber);
     this.router.delete(`${this.path}/:id`, this.appController.deleteSubscriber);
-    this.router.post(`${this.path}/publish/:topic`, this.appController.publishMessage);
+    this.router.post(`${this.path}/publish/:topic`, this.appController.addMessageToQueue);
   }
 }
 

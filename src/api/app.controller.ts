@@ -6,12 +6,12 @@ import appService from './app.service';
 class AppController {
   public appService = new appService();
 
-  public publishMessage = async (req: Request, res: Response, next: NextFunction) => {
+  public addMessageToQueue = async (req: Request, res: Response, next: NextFunction) => {
     const payload: any = req.body;
     const topic = req.params.topic;
 
     try {
-      const response = await this.appService.publishMessage(topic, payload);
+      const response = await this.appService.addMessageToQueue(topic, payload);
       res.status(201).json(response);
     } catch (error) {
       next(error);

@@ -10,6 +10,8 @@ import { dbConnection } from './database';
 import Routes from './interfaces/routes.interface';
 import errorMiddleware from './middlewares/error.middleware';
 import { logger, stream } from './utils/logger';
+import cron from 'node-cron';
+import Jobs from './jobs';
 
 class App {
   public app: express.Application;
@@ -25,6 +27,7 @@ class App {
     this.initializeMiddlewares();
     this.initializeRoutes(routes);
     this.initializeErrorHandling();
+    new Jobs().start();
   }
 
   public listen() {
