@@ -6,7 +6,7 @@ class Subscriber {
     this.port = port;
   }
 
-  async run() {
+  run() {
     const server = http.createServer((req, res) => {
       const method = req.method.toUpperCase();
       const decoder = new StringDecoder('utf-8');
