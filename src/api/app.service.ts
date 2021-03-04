@@ -64,10 +64,10 @@ class AppService {
 
       // Set message status to published
       await this.messageQueue.updateOne({ _id: messageId }, { isPublished: true });
-
-      // Delete published messages from queue
-      await this.publishQueue.deleteMany({ _id: publishedMessagesIds });
     }
+
+    // Delete published messages from queue
+    await this.publishQueue.deleteMany({ _id: publishedMessagesIds });
   }
 
   public async findAll(criteria = {}): Promise<ISubscriber[]> {
